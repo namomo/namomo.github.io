@@ -2,7 +2,7 @@
 
 국가 간의 서로 다른 단위(환율, 무게, 길이, 온도 등)를 쉽고 빠르게 변환해주는 지능형 단위 변환 서비스입니다.
 
-![App Preview](https://via.placeholder.com/800x450?text=Unit+Bridge+Preview)
+![링크](https://namomo.github.io/)
 
 ## 🚀 주요 기능
 - **실시간 환율**: Frankfurter API를 연동하여 최신 USD/KRW 환율 정보를 제공합니다.
