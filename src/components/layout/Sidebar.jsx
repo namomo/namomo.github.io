@@ -85,11 +85,15 @@ const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
         </List>
       </Box>
 
-      <Box sx={{ mt: 'auto', p: 3 }}>
-        <Typography variant="caption" color="text.secondary">
+      <Box sx={{ mt: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
           © 2026 UnitBridge
         </Typography>
+        <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
+          v{__APP_VERSION__}
+        </Typography>
       </Box>
+
     </Box>
   );
 
