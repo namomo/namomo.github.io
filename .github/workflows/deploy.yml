@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main  # 또는 배포할 브랜치 이름
+      
+permissions:
+  contents: write  # 저장소에 Push하기 위한 권한
+  pages: write     # Pages 배포를 위한 권한 (Actions 방식 사용 시)
+  id-token: write  # OIDC 인증을 위한 권한
 
 jobs:
   build-and-deploy:
