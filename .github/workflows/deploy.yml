@@ -4,7 +4,12 @@ on:
   push:
     branches:
       - main  # 또는 배포할 브랜치 이름
-
+      
+permissions:
+  contents: read    # 코드는 읽기만
+  pages: write      # 배포는 쓰기 권한 필요
+  id-token: write   # 인증용
+  
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -22,3 +27,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
