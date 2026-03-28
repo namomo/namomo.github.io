@@ -1,7 +1,21 @@
 import React, { useEffect } from 'react';
-import { Paper, Box, TextField, Typography, Skeleton, InputAdornment } from '@mui/material';
-import { ArrowLeftRight, TrendingUp } from 'lucide-react';
+import { 
+  Paper, 
+  Box, 
+  TextField, 
+  Typography, 
+  Skeleton, 
+  InputAdornment, 
+  Divider,
+  Select,
+  MenuItem,
+  FormControl,
+} from '@mui/material';
+
+import { ArrowLeftRight, TrendingUp, Globe } from 'lucide-react';
 import useUnitStore from '../../stores/use-unit-store';
+import CurrencySelector from './CurrencySelector';
+import { AVAILABLE_CURRENCIES } from '../../constants/currencies';
 
 const MainCard = () => {
   const { 
@@ -11,45 +25,26 @@ const MainCard = () => {
     setUsValue, 
     setKrValue, 
     exchangeRate,
+    multiExchangeRates,
     isRateLoading,
-    initialize 
+    initialize,
+    baseAmount,
+    setBaseAmount,
+    targetCurrencies,
+    baseCurrency,
+    setBaseCurrency,
+    rateDate,
+    updateTime
   } = useUnitStore();
+
+
 
   useEffect(() => {
     initialize();
   }, []);
 
-  return (
-    <Paper 
-      elevation={0}
-      sx={{ 
-        p: { xs: 3, md: 5 }, 
-        borderRadius: '24px', 
-        bgcolor: '#ffffff',
-        border: '1px solid rgba(0, 0, 0, 0.05)',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3,
-        maxWidth: '600px',
-        width: '100%',
-        margin: '0 auto'
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
-          {selectedCategory.name}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', bgcolor: 'rgba(0,0,0,0.03)', px: 1.5, py: 0.5, borderRadius: '20px' }}>
-          <TrendingUp size={14} />
-          {isRateLoading ? (
-            <Skeleton width={80} />
-          ) : (
-            <Typography variant="caption" sx={{ fontWeight: 600 }}>1 USD = {exchangeRate.toLocaleString()} KRW</Typography>
-          )}
-        </Box>
-      </Box>
-
+  const renderNormalLayout = () => (
+    <>
       {/* US Input */}
       <Box>
         <Typography variant="subtitle2" sx={{ mb: 1, ml: 1, fontWeight: 600, color: 'text.secondary' }}>
@@ -91,7 +86,7 @@ const MainCard = () => {
           p: 0.5,
           color: 'primary.main',
           display: 'flex',
-          bgcolor: '#ffffff', // 커버 효과를 위해 배경색 유지하되 원형/그림자 제거
+          bgcolor: '#ffffff',
           zIndex: 1,
           opacity: 0.8
         }}>
@@ -134,14 +129,151 @@ const MainCard = () => {
           }}
         />
       </Box>
+    </>
+  );
+
+  const renderMultiLayout = () => {
+    const currentBase = AVAILABLE_CURRENCIES.find(c => c.code === baseCurrency);
+    
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Base Input & Currency Selector */}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+          <FormControl variant="outlined" sx={{ minWidth: 100 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, ml: 1, fontWeight: 600, color: 'text.secondary' }}>
+              기준
+            </Typography>
+            <Select
+              value={baseCurrency}
+              onChange={(e) => setBaseCurrency(e.target.value)}
+              sx={{ borderRadius: '16px', bgcolor: '#fcfcfd', fontWeight: 700 }}
+            >
+              {AVAILABLE_CURRENCIES.map(c => (
+                <MenuItem key={c.code} value={c.code}>{c.code}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, ml: 1, fontWeight: 600, color: 'text.secondary' }}>
+              금액 ({baseCurrency})
+            </Typography>
+            <TextField
+              fullWidth
+              value={baseAmount}
+              onChange={(e) => setBaseAmount(e.target.value)}
+              type="number"
+              variant="outlined"
+              placeholder="0.00"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Typography sx={{ fontWeight: 700, color: 'primary.main' }}>{currentBase?.symbol}</Typography>
+                  </InputAdornment>
+                ),
+                sx: { 
+                  borderRadius: '16px',
+                  fontSize: '1.8rem',
+                  fontWeight: 800,
+                  bgcolor: '#fcfcfd',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(0,0,0,0.08)'
+                  }
+                }
+              }}
+            />
+          </Box>
+        </Box>
+
+        <Divider>
+          <Globe size={20} color={theme => theme.palette.divider} />
+        </Divider>
+
+        {/* Target Results */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {targetCurrencies.map(code => {
+            const rate = code === baseCurrency ? 1 : multiExchangeRates[code];
+            const converted = baseAmount ? (parseFloat(baseAmount) * (rate || 0)).toFixed(2) : '0.00';
+            return (
+              <Box 
+                key={code}
+                sx={{ 
+                  p: 2, 
+                  borderRadius: '16px', 
+                  bgcolor: '#f8f9fa', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  border: '1px solid rgba(0,0,0,0.03)'
+                }}
+              >
+                <Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>{code}</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>{Number(converted).toLocaleString()}</Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                  1 {baseCurrency} = {rate ? rate.toFixed(4) : '-'} {code}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+
+        <CurrencySelector />
+      </Box>
+    );
+  };
+
+  return (
+    <Paper 
+      elevation={0}
+      sx={{ 
+        p: { xs: 3, md: 5 }, 
+        borderRadius: '24px', 
+        bgcolor: '#ffffff',
+        border: '1px solid rgba(0, 0, 0, 0.05)',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.06)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
+        maxWidth: '600px',
+        width: '100%',
+        margin: '0 auto'
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          {selectedCategory.name}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', bgcolor: 'rgba(0,0,0,0.03)', px: 1.5, py: 0.5, borderRadius: '20px' }}>
+          <TrendingUp size={14} />
+          {isRateLoading ? (
+            <Skeleton width={80} />
+          ) : (
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                1 USD = {exchangeRate.toLocaleString()} KRW
+            </Typography>
+
+          )}
+        </Box>
+      </Box>
+
+      {selectedCategory.id === 'currency' ? renderMultiLayout() : renderNormalLayout()}
 
       <Box sx={{ mt: 2, p: 2, borderRadius: '16px', bgcolor: 'rgba(103, 58, 183, 0.04)', border: '1px dashed rgba(103, 58, 183, 0.2)' }}>
         <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-          실시간 환율과 국제 표준 규격이 자동으로 적용되었습니다.
+          실시간 환율({updateTime})과 국제 표준 규격이 자동으로 적용되었습니다.
         </Typography>
       </Box>
+
+
+
+
     </Paper>
   );
 };
 
 export default MainCard;
+
+
+

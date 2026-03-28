@@ -54,5 +54,14 @@ export const CATEGORIES = [
     // 1 ft = 0.3048 m
     convertUsToKr: (usVal) => usVal * 0.3048,
     convertKrToUs: (krVal) => krVal / 0.3048,
+  },
+  {
+    id: 'currency',
+    name: '환율 변환 (Currency)',
+    icon: 'Globe',
+    isMulti: true,
+    baseUnit: 'KRW',
+    basePrefix: '₩',
   }
 ];
+
