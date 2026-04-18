@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 const STANDARD_CACHE_KEY = 'unitbridge_standard_rate';
 const MULTI_CACHE_KEY = 'unitbridge_multi_rates';
 const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
@@ -16,9 +14,13 @@ export const fetchStandardRate = async () => {
   }
 
   try {
-    const response = await axios.get('https://api.frankfurter.app/latest?from=USD&to=KRW');
-    const rate = response.data.rates.KRW;
-    const date = response.data.date;
+    const response = await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    const rate = data.rates.KRW;
+    const date = data.date;
     localStorage.setItem(STANDARD_CACHE_KEY, JSON.stringify({ rate, timestamp: Date.now(), date }));
     console.log('Fetched fresh standard USD->KRW rate:', rate);
     return { rate, date };
@@ -44,9 +46,13 @@ export const fetchExchangeRates = async (base = 'KRW', symbols = ['USD', 'JPY', 
   }
 
   try {
-    const response = await axios.get(`https://api.frankfurter.app/latest?from=${base}&to=${symbolsQuery}`);
-    const rates = response.data.rates;
-    const date = response.data.date;
+    const response = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=${symbolsQuery}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    const rates = data.rates;
+    const date = data.date;
     localStorage.setItem(cacheKey, JSON.stringify({ rates, timestamp: Date.now(), date }));
     console.log(`Fetched fresh rates for base ${base}:`, rates);
     return { rates, date };
