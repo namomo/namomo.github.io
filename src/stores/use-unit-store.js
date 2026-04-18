@@ -12,7 +12,10 @@ const useUnitStore = create(
       rateDate: '', // Updated date string from API
       updateTime: '', // Actual fetch time for precision
       multiExchangeRates: {}, // Map of target currency rates relative to base
+      currentMode: 'converter', // 'converter' or 'unit-price'
       isRateLoading: false,
+      
+      setCurrentMode: (mode) => set({ currentMode: mode }),
       
       usValue: '',
       krValue: '',

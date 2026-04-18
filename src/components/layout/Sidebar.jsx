@@ -18,7 +18,13 @@ import { Layers, X } from 'lucide-react';
 import useUnitStore from '../../stores/use-unit-store';
 
 const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
-  const { categories, selectedCategory, setSelectedCategory } = useUnitStore();
+  const { 
+    categories, 
+    selectedCategory, 
+    setSelectedCategory, 
+    currentMode, 
+    setCurrentMode 
+  } = useUnitStore();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -38,20 +44,21 @@ const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
       
       <Divider sx={{ mx: 2, opacity: 0.5 }} />
       
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: 2, flexGrow: 1, overflowY: 'auto' }}>
         <Typography variant="overline" sx={{ px: 2, color: 'text.secondary', fontWeight: 700 }}>
-          Categories
+          Conversion
         </Typography>
-        <List sx={{ mt: 1 }}>
+        <List sx={{ mt: 1, mb: 2 }}>
           {categories.map((cat) => {
             const IconComponent = LucideIcons[cat.icon];
-            const isSelected = selectedCategory.id === cat.id;
+            const isSelected = currentMode === 'converter' && selectedCategory.id === cat.id;
             
             return (
               <ListItem key={cat.id} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton 
                   selected={isSelected}
                   onClick={() => {
+                    setCurrentMode('converter');
                     setSelectedCategory(cat);
                     if (isMobile) onClose();
                   }}
@@ -83,6 +90,46 @@ const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
             );
           })}
         </List>
+
+        <Divider sx={{ mx: 2, mb: 2, opacity: 0.5 }} />
+
+        <Typography variant="overline" sx={{ px: 2, color: 'text.secondary', fontWeight: 700 }}>
+          Tools
+        </Typography>
+        <List sx={{ mt: 1 }}>
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton 
+              selected={currentMode === 'unit-price'}
+              onClick={() => {
+                setCurrentMode('unit-price');
+                if (isMobile) onClose();
+              }}
+              sx={{
+                borderRadius: '12px',
+                transition: 'all 0.2s ease',
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(103, 58, 183, 0.08)',
+                  color: 'primary.main',
+                  '& .MuiListItemIcon-root': { color: 'primary.main' }
+                },
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.04)',
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <LucideIcons.Calculator size={20} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="단위당 가격 계산" 
+                primaryTypographyProps={{ 
+                  fontWeight: currentMode === 'unit-price' ? 600 : 500,
+                  fontSize: '0.95rem'
+                }} 
+              />
+            </ListItemButton>
+          </ListItem>
+        </List>
       </Box>
 
       <Box sx={{ mt: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -93,7 +140,6 @@ const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
           v{__APP_VERSION__}
         </Typography>
       </Box>
-
     </Box>
   );
 

@@ -12,6 +12,8 @@ import {
 import { Menu as MenuIcon } from 'lucide-react'
 import Sidebar from './components/layout/Sidebar'
 import MainCard from './components/converter/MainCard'
+import UnitPriceCalculator from './components/unit-price/unit-price-calculator'
+import useUnitStore from './stores/use-unit-store'
 
 const theme = createTheme({
   palette: {
@@ -51,6 +53,7 @@ const theme = createTheme({
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { currentMode } = useUnitStore();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -94,8 +97,8 @@ function App() {
             </Box>
           )}
           
-          <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 8 } }}>
-            <MainCard />
+          <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 8 }, display: 'flex', justifyContent: 'center' }}>
+            {currentMode === 'converter' ? <MainCard /> : <UnitPriceCalculator />}
           </Container>
         </Box>
       </Box>
