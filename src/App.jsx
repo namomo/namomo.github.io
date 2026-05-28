@@ -10,10 +10,10 @@ import {
   useMediaQuery
 } from '@mui/material'
 import { Menu as MenuIcon } from 'lucide-react'
-import Sidebar from './components/layout/Sidebar'
-import MainCard from './components/converter/MainCard'
+import Sidebar from './components/layout/sidebar'
+import MainCard from './components/converter/main-card'
 import UnitPriceCalculator from './components/unit-price/unit-price-calculator'
-import useUnitStore from './stores/use-unit-store'
+import useUnitStore from './stores/unit-store'
 
 const theme = createTheme({
   palette: {

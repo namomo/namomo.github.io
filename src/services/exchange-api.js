@@ -14,7 +14,7 @@ export const fetchStandardRate = async () => {
   }
 
   try {
-    const response = await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW');
+    const response = await fetch('https://api.frankfurter.dev/v1/latest?from=USD&to=KRW');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -32,13 +32,15 @@ export const fetchStandardRate = async () => {
 
 // 2. Fetch multiple rates for a specific base (for currency converter)
 export const fetchExchangeRates = async (base = 'KRW', symbols = ['USD', 'JPY', 'EUR', 'GBP']) => {
-  const symbolsQuery = symbols.join(',');
+  // base와 중복되는 심볼은 제외하여 API 에러를 방지합니다.
+  const filteredSymbols = symbols.filter(s => s !== base);
+  const symbolsQuery = filteredSymbols.join(',');
   const cacheKey = `${MULTI_CACHE_KEY}_${base}`;
   const cached = localStorage.getItem(cacheKey);
   
   if (cached) {
     const { rates, timestamp, date } = JSON.parse(cached);
-    const hasAllSymbols = symbols.every(s => rates[s] !== undefined || s === base);
+    const hasAllSymbols = filteredSymbols.every(s => rates[s] !== undefined);
     if (Date.now() - timestamp < CACHE_EXPIRY && hasAllSymbols) {
       console.log(`Using cached rates for base ${base}:`, rates);
       return { rates, date };
@@ -46,7 +48,10 @@ export const fetchExchangeRates = async (base = 'KRW', symbols = ['USD', 'JPY', 
   }
 
   try {
-    const response = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=${symbolsQuery}`);
+    if (filteredSymbols.length === 0) {
+      return { rates: {}, date: '' };
+    }
+    const response = await fetch(`https://api.frankfurter.dev/v1/latest?from=${base}&to=${symbolsQuery}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

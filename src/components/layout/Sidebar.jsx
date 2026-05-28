@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import * as LucideIcons from 'lucide-react';
 import { Layers, X } from 'lucide-react';
-import useUnitStore from '../../stores/use-unit-store';
+import useUnitStore from '../../stores/unit-store';
 
 const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
   const { 

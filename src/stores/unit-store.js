@@ -43,6 +43,7 @@ const useUnitStore = create(
             isRateLoading: false 
           });
         } catch (error) {
+          console.error('Failed to initialize unit store:', error);
           set({ isRateLoading: false });
         }
       },
@@ -82,17 +83,35 @@ const useUnitStore = create(
       },
 
       setBaseCurrency: async (code) => {
-        set({ baseCurrency: code, baseAmount: '', isRateLoading: true });
-        const { targetCurrencies } = get();
-        const multiInfo = await fetchExchangeRates(code, targetCurrencies);
-        const d = new Date();
-        const now = `${d.getFullYear().toString().slice(-2)}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-        set({ 
-          multiExchangeRates: multiInfo.rates, 
-          rateDate: multiInfo.date,
-          updateTime: now,
-          isRateLoading: false 
-        });
+        const { baseCurrency, targetCurrencies } = get();
+        if (code === baseCurrency) return;
+
+        // 새 기준 통화가 타겟 통화 목록에 들어있다면 제거하고,
+        // 기존 기준 통화는 타겟 통화 목록에 추가하여 자연스러운 뷰 스왑 유도
+        let newTargets = [...targetCurrencies];
+        if (newTargets.includes(code)) {
+          newTargets = newTargets.filter(c => c !== code);
+        }
+        if (!newTargets.includes(baseCurrency)) {
+          newTargets.push(baseCurrency);
+        }
+
+        set({ baseCurrency: code, targetCurrencies: newTargets, baseAmount: '', isRateLoading: true });
+        
+        try {
+          const multiInfo = await fetchExchangeRates(code, newTargets);
+          const d = new Date();
+          const now = `${d.getFullYear().toString().slice(-2)}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+          set({ 
+            multiExchangeRates: multiInfo.rates, 
+            rateDate: multiInfo.date,
+            updateTime: now,
+            isRateLoading: false 
+          });
+        } catch (error) {
+          console.error('Failed to change base currency:', error);
+          set({ isRateLoading: false });
+        }
       },
 
       addTargetCurrency: async (code) => {
@@ -102,19 +121,21 @@ const useUnitStore = create(
         const newTargets = [...targetCurrencies, code];
         set({ targetCurrencies: newTargets, isRateLoading: true });
         
-        const multiInfo = await fetchExchangeRates(baseCurrency, newTargets);
-        const d = new Date();
-        const now = `${d.getFullYear().toString().slice(-2)}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-        set({ 
-          multiExchangeRates: multiInfo.rates, 
-          rateDate: multiInfo.date,
-          updateTime: now,
-          isRateLoading: false 
-        });
+        try {
+          const multiInfo = await fetchExchangeRates(baseCurrency, newTargets);
+          const d = new Date();
+          const now = `${d.getFullYear().toString().slice(-2)}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+          set({ 
+            multiExchangeRates: multiInfo.rates, 
+            rateDate: multiInfo.date,
+            updateTime: now,
+            isRateLoading: false 
+          });
+        } catch (error) {
+          console.error('Failed to add target currency:', error);
+          set({ isRateLoading: false });
+        }
       },
-
-
-
 
       removeTargetCurrency: (code) => {
         const { targetCurrencies } = get();
@@ -132,6 +153,4 @@ const useUnitStore = create(
   )
 );
 
-
 export default useUnitStore;
-

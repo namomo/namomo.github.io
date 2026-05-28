@@ -10,20 +10,15 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  Typography,
   Chip
 } from '@mui/material';
 import { Plus } from 'lucide-react';
-import useUnitStore from '../../stores/use-unit-store';
-
+import useUnitStore from '../../stores/unit-store';
 import { AVAILABLE_CURRENCIES } from '../../constants/currencies';
-
-
 
 const CurrencySelector = () => {
   const [open, setOpen] = useState(false);
-  const { targetCurrencies, addTargetCurrency, removeTargetCurrency, baseCurrency } = useUnitStore();
-
+  const { targetCurrencies, addTargetCurrency, removeTargetCurrency } = useUnitStore();
 
   const handleToggle = (code) => {
     if (targetCurrencies.includes(code)) {
@@ -67,8 +62,6 @@ const CurrencySelector = () => {
         <DialogContent dividers>
           <List>
             {AVAILABLE_CURRENCIES.map((curr) => {
-
-
               const isSelected = targetCurrencies.includes(curr.code);
               return (
                 <ListItem key={curr.code} disablePadding>
@@ -82,7 +75,6 @@ const CurrencySelector = () => {
                 </ListItem>
               );
             })}
-
           </List>
         </DialogContent>
         <DialogActions>

@@ -1,3 +1,9 @@
+// 단위 변환을 위한 계수 정의 (매직 넘버 방지)
+const LITERS_PER_GALLON = 3.78541;       // 1 Gallon = 3.78541 Liters
+const HUNDRED_GRAMS_PER_POUND = 4.53592; // 1 Pound = 453.592 Grams = 4.53592 * 100g
+const KG_PER_POUND = 0.453592;            // 1 Pound = 0.453592 kg
+const METERS_PER_FOOT = 0.3048;           // 1 Foot = 0.3048 m
+
 export const CATEGORIES = [
   {
     id: 'gas',
@@ -9,9 +15,8 @@ export const CATEGORIES = [
     usSuffix: '/gal',
     krPrefix: '₩',
     krSuffix: '/L',
-    // 1 Gallon = 3.78541 Liters
-    convertUsToKr: (usVal, rate) => (usVal * rate) / 3.78541,
-    convertKrToUs: (krVal, rate) => (krVal * 3.78541) / rate,
+    convertUsToKr: (usVal, rate) => (usVal * rate) / LITERS_PER_GALLON,
+    convertKrToUs: (krVal, rate) => (krVal * LITERS_PER_GALLON) / rate,
   },
   {
     id: 'meat',
@@ -23,9 +28,8 @@ export const CATEGORIES = [
     usSuffix: '/lb',
     krPrefix: '₩',
     krSuffix: '/100g',
-    // 1 Pound = 453.592 Grams = 4.53592 * 100g
-    convertUsToKr: (usVal, rate) => (usVal * rate) / 4.53592,
-    convertKrToUs: (krVal, rate) => (krVal * 4.53592) / rate,
+    convertUsToKr: (usVal, rate) => (usVal * rate) / HUNDRED_GRAMS_PER_POUND,
+    convertKrToUs: (krVal, rate) => (krVal * HUNDRED_GRAMS_PER_POUND) / rate,
   },
   {
     id: 'weight',
@@ -37,9 +41,8 @@ export const CATEGORIES = [
     usSuffix: 'lb',
     krPrefix: '',
     krSuffix: 'kg',
-    // 1 lb = 0.453592 kg
-    convertUsToKr: (usVal) => usVal * 0.453592,
-    convertKrToUs: (krVal) => krVal / 0.453592,
+    convertUsToKr: (usVal) => usVal * KG_PER_POUND,
+    convertKrToUs: (krVal) => krVal / KG_PER_POUND,
   },
   {
     id: 'length',
@@ -51,9 +54,8 @@ export const CATEGORIES = [
     usSuffix: 'ft',
     krPrefix: '',
     krSuffix: 'm',
-    // 1 ft = 0.3048 m
-    convertUsToKr: (usVal) => usVal * 0.3048,
-    convertKrToUs: (krVal) => krVal / 0.3048,
+    convertUsToKr: (usVal) => usVal * METERS_PER_FOOT,
+    convertKrToUs: (krVal) => krVal / METERS_PER_FOOT,
   },
   {
     id: 'currency',
@@ -64,4 +66,5 @@ export const CATEGORIES = [
     basePrefix: '₩',
   }
 ];
+
 

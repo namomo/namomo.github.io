@@ -11,10 +11,9 @@ import {
   MenuItem,
   FormControl,
 } from '@mui/material';
-
 import { ArrowLeftRight, TrendingUp, Globe } from 'lucide-react';
-import useUnitStore from '../../stores/use-unit-store';
-import CurrencySelector from './CurrencySelector';
+import useUnitStore from '../../stores/unit-store';
+import CurrencySelector from './currency-selector';
 import { AVAILABLE_CURRENCIES } from '../../constants/currencies';
 
 const MainCard = () => {
@@ -37,11 +36,9 @@ const MainCard = () => {
     updateTime
   } = useUnitStore();
 
-
-
   useEffect(() => {
     initialize();
-  }, []);
+  }, [initialize]);
 
   const renderNormalLayout = () => (
     <>
@@ -251,9 +248,8 @@ const MainCard = () => {
             <Skeleton width={80} />
           ) : (
             <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                1 USD = {exchangeRate.toLocaleString()} KRW
+              1 USD = {exchangeRate.toLocaleString()} KRW
             </Typography>
-
           )}
         </Box>
       </Box>
@@ -265,15 +261,8 @@ const MainCard = () => {
           실시간 환율({updateTime})과 국제 표준 규격이 자동으로 적용되었습니다.
         </Typography>
       </Box>
-
-
-
-
     </Paper>
   );
 };
 
 export default MainCard;
-
-
-

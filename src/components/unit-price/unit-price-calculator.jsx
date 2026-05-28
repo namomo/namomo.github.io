@@ -57,6 +57,9 @@ const UnitPriceCalculator = () => {
     calculate();
   }, [totalPrice, totalQuantity, selectedUnit, refQuantity, refUnit]);
 
+  const selectedUnitObj = UNITS.find(u => u.id === selectedUnit);
+  const allowedRefUnits = selectedUnitObj ? UNITS.filter(u => u.group === selectedUnitObj.group) : UNITS;
+
   const calculate = () => {
     const price = parseFloat(totalPrice);
     const qty = parseFloat(totalQuantity);
@@ -202,7 +205,7 @@ const UnitPriceCalculator = () => {
                     value={refUnit}
                     onChange={(e) => setRefUnit(e.target.value)}
                   >
-                    {UNITS.map((unit) => (
+                    {allowedRefUnits.map((unit) => (
                       <MenuItem key={unit.id} value={unit.id}>
                         {unit.name}
                       </MenuItem>
