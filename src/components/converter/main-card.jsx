@@ -15,6 +15,7 @@ import { ArrowLeftRight, TrendingUp, Globe } from 'lucide-react';
 import useUnitStore from '../../stores/unit-store';
 import CurrencySelector from './currency-selector';
 import { AVAILABLE_CURRENCIES } from '../../constants/currencies';
+import ExchangeTrend from './exchange-trend';
 
 const MainCard = () => {
   const { 
@@ -183,7 +184,7 @@ const MainCard = () => {
         </Box>
 
         <Divider>
-          <Globe size={20} color={theme => theme.palette.divider} />
+          <Globe size={20} color="rgba(0, 0, 0, 0.2)" />
         </Divider>
 
         {/* Target Results */}
@@ -222,46 +223,48 @@ const MainCard = () => {
   };
 
   return (
-    <Paper 
-      elevation={0}
-      sx={{ 
-        p: { xs: 3, md: 5 }, 
-        borderRadius: '24px', 
-        bgcolor: '#ffffff',
-        border: '1px solid rgba(0, 0, 0, 0.05)',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3,
-        maxWidth: '600px',
-        width: '100%',
-        margin: '0 auto'
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
-          {selectedCategory.name}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', bgcolor: 'rgba(0,0,0,0.03)', px: 1.5, py: 0.5, borderRadius: '20px' }}>
-          <TrendingUp size={14} />
-          {isRateLoading ? (
-            <Skeleton width={80} />
-          ) : (
-            <Typography variant="caption" sx={{ fontWeight: 600 }}>
-              1 USD = {exchangeRate.toLocaleString()} KRW
-            </Typography>
-          )}
+    <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Paper 
+        elevation={0}
+        sx={{ 
+          p: { xs: 3, md: 5 }, 
+          borderRadius: '24px', 
+          bgcolor: '#ffffff',
+          border: '1px solid rgba(0, 0, 0, 0.05)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+          width: '100%'
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            {selectedCategory.name}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', bgcolor: 'rgba(0,0,0,0.03)', px: 1.5, py: 0.5, borderRadius: '20px' }}>
+            <TrendingUp size={14} />
+            {isRateLoading ? (
+              <Skeleton width={80} />
+            ) : (
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                1 USD = {exchangeRate.toLocaleString()} KRW
+              </Typography>
+            )}
+          </Box>
         </Box>
-      </Box>
 
-      {selectedCategory.id === 'currency' ? renderMultiLayout() : renderNormalLayout()}
+        {selectedCategory.id === 'currency' ? renderMultiLayout() : renderNormalLayout()}
 
-      <Box sx={{ mt: 2, p: 2, borderRadius: '16px', bgcolor: 'rgba(103, 58, 183, 0.04)', border: '1px dashed rgba(103, 58, 183, 0.2)' }}>
-        <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-          실시간 환율({updateTime})과 국제 표준 규격이 자동으로 적용되었습니다.
-        </Typography>
-      </Box>
-    </Paper>
+        <Box sx={{ mt: 2, p: 2, borderRadius: '16px', bgcolor: 'rgba(103, 58, 183, 0.04)', border: '1px dashed rgba(103, 58, 183, 0.2)' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+            실시간 환율({updateTime})과 국제 표준 규격이 자동으로 적용되었습니다.
+          </Typography>
+        </Box>
+      </Paper>
+      
+      {selectedCategory.id === 'currency' && <ExchangeTrend />}
+    </Box>
   );
 };
 

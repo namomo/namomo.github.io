@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CATEGORIES } from '../constants/categories';
-import { fetchStandardRate, fetchExchangeRates } from '../services/exchange-api';
+import { fetchStandardRate, fetchExchangeRates, fetchHistoricalRates } from '../services/exchange-api';
 
 const useUnitStore = create(
   persist(
@@ -14,6 +14,14 @@ const useUnitStore = create(
       multiExchangeRates: {}, // Map of target currency rates relative to base
       currentMode: 'converter', // 'converter' or 'unit-price'
       isRateLoading: false,
+      
+      // Trend Chart States
+      trendBaseCurrency: 'KRW',
+      trendTargetCurrency: 'USD',
+      historicalRates: {},
+      historicalStartDate: '',
+      historicalEndDate: '',
+      isHistoricalLoading: false,
       
       setCurrentMode: (mode) => set({ currentMode: mode }),
       
@@ -42,6 +50,18 @@ const useUnitStore = create(
             multiExchangeRates: multiInfo.rates,
             isRateLoading: false 
           });
+
+          // Initialize trend settings to align with default baseCurrency
+          const currentBase = get().baseCurrency;
+          const initialTrendBase = ['KRW', 'USD', 'JPY', 'EUR'].includes(currentBase) ? currentBase : 'KRW';
+          const initialTrendTarget = initialTrendBase === 'KRW' ? 'USD' : 'KRW';
+
+          set({
+            trendBaseCurrency: initialTrendBase,
+            trendTargetCurrency: initialTrendTarget
+          });
+
+          await get().loadHistoricalRates();
         } catch (error) {
           console.error('Failed to initialize unit store:', error);
           set({ isRateLoading: false });
@@ -96,7 +116,21 @@ const useUnitStore = create(
           newTargets.push(baseCurrency);
         }
 
-        set({ baseCurrency: code, targetCurrencies: newTargets, baseAmount: '', isRateLoading: true });
+        // Synchronize trend base currency to the new baseCurrency
+        const trendTarget = get().trendTargetCurrency;
+        let newTrendTarget = trendTarget;
+        if (code === trendTarget) {
+          newTrendTarget = code === 'KRW' ? 'USD' : 'KRW';
+        }
+
+        set({ 
+          baseCurrency: code, 
+          targetCurrencies: newTargets, 
+          baseAmount: '', 
+          isRateLoading: true,
+          trendBaseCurrency: code,
+          trendTargetCurrency: newTrendTarget
+        });
         
         try {
           const multiInfo = await fetchExchangeRates(code, newTargets);
@@ -108,6 +142,9 @@ const useUnitStore = create(
             updateTime: now,
             isRateLoading: false 
           });
+          
+          // Also fetch updated historical rates for trend chart
+          await get().loadHistoricalRates();
         } catch (error) {
           console.error('Failed to change base currency:', error);
           set({ isRateLoading: false });
@@ -141,6 +178,38 @@ const useUnitStore = create(
         const { targetCurrencies } = get();
         const newTargets = targetCurrencies.filter(c => c !== code);
         set({ targetCurrencies: newTargets });
+      },
+
+      setTrendBaseCurrency: async (code) => {
+        const { trendTargetCurrency } = get();
+        let newTarget = trendTargetCurrency;
+        if (code === trendTargetCurrency) {
+          newTarget = code === 'KRW' ? 'USD' : 'KRW';
+        }
+        set({ trendBaseCurrency: code, trendTargetCurrency: newTarget });
+        await get().loadHistoricalRates();
+      },
+
+      setTrendTargetCurrency: (code) => {
+        set({ trendTargetCurrency: code });
+      },
+
+      loadHistoricalRates: async () => {
+        const { trendBaseCurrency } = get();
+        set({ isHistoricalLoading: true });
+        try {
+          const targets = ['USD', 'JPY', 'EUR', 'KRW'].filter(c => c !== trendBaseCurrency);
+          const data = await fetchHistoricalRates(trendBaseCurrency, targets);
+          set({
+            historicalRates: data.rates || {},
+            historicalStartDate: data.startDate || '',
+            historicalEndDate: data.endDate || '',
+            isHistoricalLoading: false
+          });
+        } catch (error) {
+          console.error('Failed to load historical rates:', error);
+          set({ isHistoricalLoading: false });
+        }
       }
     }),
     {
