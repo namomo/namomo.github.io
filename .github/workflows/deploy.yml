@@ -3,24 +3,42 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main  # 또는 배포할 브랜치 이름
-      
+      - main
+
 permissions:
-  contents: read    # 코드는 읽기만
-  pages: write      # 배포는 쓰기 권한 필요
-  id-token: write   # 인증용
-  
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
 
+      - name: Install pnpm 📦
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node ⚙️
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
       - name: Install and Build 🔧
         run: |
-          npm install
-          npm run build
+          pnpm install --no-frozen-lockfile
+          pnpm run build
 
       # 1. 빌드 결과물(dist)을 임시 저장소(artifact)에 업로드합니다.
       - name: Upload artifact 📦
