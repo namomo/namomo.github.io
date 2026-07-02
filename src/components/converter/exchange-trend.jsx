@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { 
   Box, 
   Typography, 
@@ -8,12 +8,10 @@ import {
   Chip, 
   Skeleton, 
   useTheme,
-  Grid,
   Divider
 } from '@mui/material';
 import { TrendingUp, TrendingDown, Info, Calendar } from 'lucide-react';
 import useUnitStore from '../../stores/unit-store';
-import { AVAILABLE_CURRENCIES } from '../../constants/currencies';
 
 const ExchangeTrend = () => {
   const theme = useTheme();
@@ -25,24 +23,21 @@ const ExchangeTrend = () => {
     historicalRates,
     historicalStartDate,
     historicalEndDate,
-    isHistoricalLoading,
-    loadHistoricalRates
+    isHistoricalLoading
   } = useUnitStore();
 
   const svgRef = useRef(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(-1);
 
-  // Load historical rates when trend base changes
-  useEffect(() => {
-    loadHistoricalRates();
-  }, [trendBaseCurrency, loadHistoricalRates]);
-
   // Available base currencies in trend chart (major ones)
   const baseOptions = ['KRW', 'USD', 'JPY', 'EUR'];
   
   // Target currencies are major currencies excluding the current base currency
-  const targetOptions = ['USD', 'JPY', 'EUR', 'KRW'].filter(c => c !== trendBaseCurrency);
+  const targetOptions = useMemo(
+    () => ['USD', 'JPY', 'EUR', 'KRW'].filter(c => c !== trendBaseCurrency),
+    [trendBaseCurrency]
+  );
 
   // If the target currency was changed to the same as base currency, reset to first available
   useEffect(() => {
@@ -151,9 +146,6 @@ const ExchangeTrend = () => {
     if (rate < 100) return rate.toFixed(2);
     return rate.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
   };
-
-  const baseSymbol = AVAILABLE_CURRENCIES.find(c => c.code === trendBaseCurrency)?.symbol || '';
-  const targetSymbol = AVAILABLE_CURRENCIES.find(c => c.code === trendTargetCurrency)?.symbol || '';
 
   return (
     <Card 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
   Box, 
   Card, 
@@ -10,7 +10,7 @@ import {
   InputAdornment,
   Fade
 } from '@mui/material';
-import { Calculator, Tag, Package, Target } from 'lucide-react';
+import { Calculator, Tag, Target } from 'lucide-react';
 
 const UNITS = [
   { id: 'g', name: 'g', group: 'weight', factor: 1 },
@@ -29,8 +29,6 @@ const UnitPriceCalculator = () => {
   const [refQuantity, setRefQuantity] = useState('100');
   const [refUnit, setRefUnit] = useState('ml');
   
-  const [result, setResult] = useState(null);
-
   const [lastGroup, setLastGroup] = useState(null);
 
   // Auto-update reference unit based on selected unit group
@@ -53,37 +51,30 @@ const UnitPriceCalculator = () => {
     }
   }, [selectedUnit, lastGroup]);
 
-  useEffect(() => {
-    calculate();
-  }, [totalPrice, totalQuantity, selectedUnit, refQuantity, refUnit]);
-
   const selectedUnitObj = UNITS.find(u => u.id === selectedUnit);
   const allowedRefUnits = selectedUnitObj ? UNITS.filter(u => u.group === selectedUnitObj.group) : UNITS;
 
-  const calculate = () => {
+  const result = useMemo(() => {
     const price = parseFloat(totalPrice);
     const qty = parseFloat(totalQuantity);
     const refQty = parseFloat(refQuantity);
     
     if (isNaN(price) || isNaN(qty) || isNaN(refQty) || qty <= 0 || refQty <= 0) {
-      setResult(null);
-      return;
+      return null;
     }
 
     const unitObj = UNITS.find(u => u.id === selectedUnit);
     const refUnitObj = UNITS.find(u => u.id === refUnit);
 
-    if (!unitObj || !refUnitObj) return;
+    if (!unitObj || !refUnitObj) return null;
 
     // Convert everything to base (g/ml/pcs)
     const totalInBase = qty * unitObj.factor;
     const refInBase = refQty * refUnitObj.factor;
 
     const pricePerBase = price / totalInBase;
-    const finalPrice = pricePerBase * refInBase;
-
-    setResult(finalPrice);
-  };
+    return pricePerBase * refInBase;
+  }, [totalPrice, totalQuantity, selectedUnit, refQuantity, refUnit]);
 
   return (
     <Fade in={true} timeout={500}>

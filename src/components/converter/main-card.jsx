@@ -33,7 +33,6 @@ const MainCard = () => {
     targetCurrencies,
     baseCurrency,
     setBaseCurrency,
-    rateDate,
     updateTime
   } = useUnitStore();
 

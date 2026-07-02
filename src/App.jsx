@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { Suspense, lazy, useState } from 'react'
 import { 
   Box, 
   Container, 
@@ -12,8 +12,9 @@ import {
 import { Menu as MenuIcon } from 'lucide-react'
 import Sidebar from './components/layout/sidebar'
 import MainCard from './components/converter/main-card'
-import UnitPriceCalculator from './components/unit-price/unit-price-calculator'
 import useUnitStore from './stores/unit-store'
+
+const UnitPriceCalculator = lazy(() => import('./components/unit-price/unit-price-calculator'))
 
 const theme = createTheme({
   palette: {
@@ -98,7 +99,13 @@ function App() {
           )}
           
           <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 8 }, display: 'flex', justifyContent: 'center' }}>
-            {currentMode === 'converter' ? <MainCard /> : <UnitPriceCalculator />}
+            {currentMode === 'converter' ? (
+              <MainCard />
+            ) : (
+              <Suspense fallback={<Box sx={{ width: '100%', maxWidth: 600, height: 320 }} />}>
+                <UnitPriceCalculator />
+              </Suspense>
+            )}
           </Container>
         </Box>
       </Box>

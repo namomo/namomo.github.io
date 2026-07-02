@@ -14,6 +14,8 @@ const useUnitStore = create(
       multiExchangeRates: {}, // Map of target currency rates relative to base
       currentMode: 'converter', // 'converter' or 'unit-price'
       isRateLoading: false,
+      hasInitialized: false,
+      isInitializing: false,
       
       // Trend Chart States
       trendBaseCurrency: 'KRW',
@@ -34,7 +36,10 @@ const useUnitStore = create(
       baseAmount: '',
       
       initialize: async () => {
-        set({ isRateLoading: true });
+        const { hasInitialized, isInitializing } = get();
+        if (hasInitialized || isInitializing) return;
+
+        set({ isRateLoading: true, isInitializing: true });
         try {
           const d = new Date();
           const now = `${d.getFullYear().toString().slice(-2)}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
@@ -48,7 +53,9 @@ const useUnitStore = create(
             rateDate: multiInfo.date || standardInfo.date, 
             updateTime: now,
             multiExchangeRates: multiInfo.rates,
-            isRateLoading: false 
+            isRateLoading: false,
+            hasInitialized: true,
+            isInitializing: false
           });
 
           // Initialize trend settings to align with default baseCurrency
@@ -64,7 +71,7 @@ const useUnitStore = create(
           await get().loadHistoricalRates();
         } catch (error) {
           console.error('Failed to initialize unit store:', error);
-          set({ isRateLoading: false });
+          set({ isRateLoading: false, isInitializing: false });
         }
       },
       
@@ -153,7 +160,7 @@ const useUnitStore = create(
 
       addTargetCurrency: async (code) => {
         const { targetCurrencies, baseCurrency } = get();
-        if (targetCurrencies.includes(code)) return;
+        if (code === baseCurrency || targetCurrencies.includes(code)) return;
         
         const newTargets = [...targetCurrencies, code];
         set({ targetCurrencies: newTargets, isRateLoading: true });

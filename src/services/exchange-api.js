@@ -2,12 +2,25 @@ const STANDARD_CACHE_KEY = 'unitbridge_standard_rate';
 const MULTI_CACHE_KEY = 'unitbridge_multi_rates';
 const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
 
+const readCache = (key) => {
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    console.warn(`Ignoring invalid cache for ${key}:`, error);
+    localStorage.removeItem(key);
+    return null;
+  }
+};
+
 // 1. Fetch fixed USD -> KRW for general unit categories
 export const fetchStandardRate = async () => {
-  const cached = localStorage.getItem(STANDARD_CACHE_KEY);
+  const cached = readCache(STANDARD_CACHE_KEY);
   if (cached) {
-    const { rate, timestamp, date } = JSON.parse(cached);
-    if (Date.now() - timestamp < CACHE_EXPIRY) {
+    const { rate, timestamp, date } = cached;
+    if (typeof rate === 'number' && Date.now() - timestamp < CACHE_EXPIRY) {
       console.log('Using cached standard USD->KRW rate:', rate);
       return { rate, date };
     }
@@ -26,7 +39,7 @@ export const fetchStandardRate = async () => {
     return { rate, date };
   } catch (error) {
     console.error('Failed to fetch standard rate:', error);
-    return cached ? { rate: JSON.parse(cached).rate, date: JSON.parse(cached).date } : { rate: 1400, date: '' };
+    return cached ? { rate: cached.rate, date: cached.date } : { rate: 1400, date: '' };
   }
 };
 
@@ -36,10 +49,10 @@ export const fetchExchangeRates = async (base = 'KRW', symbols = ['USD', 'JPY', 
   const filteredSymbols = symbols.filter(s => s !== base);
   const symbolsQuery = filteredSymbols.join(',');
   const cacheKey = `${MULTI_CACHE_KEY}_${base}`;
-  const cached = localStorage.getItem(cacheKey);
+  const cached = readCache(cacheKey);
   
   if (cached) {
-    const { rates, timestamp, date } = JSON.parse(cached);
+    const { rates = {}, timestamp, date } = cached;
     const hasAllSymbols = filteredSymbols.every(s => rates[s] !== undefined);
     if (Date.now() - timestamp < CACHE_EXPIRY && hasAllSymbols) {
       console.log(`Using cached rates for base ${base}:`, rates);
@@ -63,7 +76,7 @@ export const fetchExchangeRates = async (base = 'KRW', symbols = ['USD', 'JPY', 
     return { rates, date };
   } catch (error) {
     console.error(`Failed to fetch rates for ${base}:`, error);
-    return cached ? { rates: JSON.parse(cached).rates, date: JSON.parse(cached).date } : { rates: {}, date: '' }; 
+    return cached ? { rates: cached.rates || {}, date: cached.date } : { rates: {}, date: '' }; 
   }
 };
 
@@ -78,11 +91,11 @@ export const fetchHistoricalRates = async (base = 'KRW', symbols = ['USD', 'JPY'
   }
   const symbolsQuery = filteredSymbols.join(',');
   const cacheKey = `${HISTORICAL_CACHE_KEY}_${base}_${symbolsQuery}`;
-  const cached = localStorage.getItem(cacheKey);
+  const cached = readCache(cacheKey);
 
   if (cached) {
-    const { rates, timestamp, startDate, endDate } = JSON.parse(cached);
-    if (Date.now() - timestamp < HISTORICAL_CACHE_EXPIRY) {
+    const { rates = {}, timestamp, startDate, endDate } = cached;
+    if (Object.keys(rates).length > 0 && Date.now() - timestamp < HISTORICAL_CACHE_EXPIRY) {
       console.log(`Using cached historical rates for base ${base}:`, rates);
       return { rates, startDate, endDate };
     }
@@ -111,8 +124,7 @@ export const fetchHistoricalRates = async (base = 'KRW', symbols = ['USD', 'JPY'
   } catch (error) {
     console.error(`Failed to fetch historical rates for ${base}:`, error);
     if (cached) {
-      const parsed = JSON.parse(cached);
-      return { rates: parsed.rates, startDate: parsed.startDate, endDate: parsed.endDate };
+      return { rates: cached.rates || {}, startDate: cached.startDate, endDate: cached.endDate };
     }
     return { rates: {}, startDate: '', endDate: '' };
   }

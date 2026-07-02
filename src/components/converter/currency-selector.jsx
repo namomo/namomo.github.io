@@ -18,7 +18,7 @@ import { AVAILABLE_CURRENCIES } from '../../constants/currencies';
 
 const CurrencySelector = () => {
   const [open, setOpen] = useState(false);
-  const { targetCurrencies, addTargetCurrency, removeTargetCurrency } = useUnitStore();
+  const { baseCurrency, targetCurrencies, addTargetCurrency, removeTargetCurrency } = useUnitStore();
 
   const handleToggle = (code) => {
     if (targetCurrencies.includes(code)) {
@@ -61,7 +61,7 @@ const CurrencySelector = () => {
         <DialogTitle sx={{ fontWeight: 700 }}>환율 국가 추가</DialogTitle>
         <DialogContent dividers>
           <List>
-            {AVAILABLE_CURRENCIES.map((curr) => {
+            {AVAILABLE_CURRENCIES.filter(curr => curr.code !== baseCurrency).map((curr) => {
               const isSelected = targetCurrencies.includes(curr.code);
               return (
                 <ListItem key={curr.code} disablePadding>
