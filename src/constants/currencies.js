@@ -21,3 +21,5 @@ export const AVAILABLE_CURRENCIES = [
   { code: 'THB', name: '태국 바트 (THB)', symbol: '฿' },
   { code: 'TRY', name: '터키 리라 (TRY)', symbol: '₺' },
 ];
+
+export const TREND_CURRENCY_CODES = ['KRW', 'USD', 'JPY', 'CNY', 'EUR', 'GBP'];

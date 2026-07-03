@@ -15,7 +15,6 @@ import { ArrowLeftRight, TrendingUp, Globe } from 'lucide-react';
 import useUnitStore from '../../stores/unit-store';
 import CurrencySelector from './currency-selector';
 import { AVAILABLE_CURRENCIES } from '../../constants/currencies';
-import ExchangeTrend from './exchange-trend';
 
 const MainCard = () => {
   const { 
@@ -261,8 +260,6 @@ const MainCard = () => {
           </Typography>
         </Box>
       </Paper>
-      
-      {selectedCategory.id === 'currency' && <ExchangeTrend />}
     </Box>
   );
 };

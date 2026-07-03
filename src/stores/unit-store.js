@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CATEGORIES } from '../constants/categories';
+import { TREND_CURRENCY_CODES } from '../constants/currencies';
 import { fetchStandardRate, fetchExchangeRates, fetchHistoricalRates } from '../services/exchange-api';
 
 const useUnitStore = create(
@@ -19,7 +20,6 @@ const useUnitStore = create(
       
       // Trend Chart States
       trendBaseCurrency: 'KRW',
-      trendTargetCurrency: 'USD',
       historicalRates: {},
       historicalStartDate: '',
       historicalEndDate: '',
@@ -60,12 +60,10 @@ const useUnitStore = create(
 
           // Initialize trend settings to align with default baseCurrency
           const currentBase = get().baseCurrency;
-          const initialTrendBase = ['KRW', 'USD', 'JPY', 'EUR'].includes(currentBase) ? currentBase : 'KRW';
-          const initialTrendTarget = initialTrendBase === 'KRW' ? 'USD' : 'KRW';
+          const initialTrendBase = TREND_CURRENCY_CODES.includes(currentBase) ? currentBase : 'KRW';
 
           set({
-            trendBaseCurrency: initialTrendBase,
-            trendTargetCurrency: initialTrendTarget
+            trendBaseCurrency: initialTrendBase
           });
 
           await get().loadHistoricalRates();
@@ -123,20 +121,12 @@ const useUnitStore = create(
           newTargets.push(baseCurrency);
         }
 
-        // Synchronize trend base currency to the new baseCurrency
-        const trendTarget = get().trendTargetCurrency;
-        let newTrendTarget = trendTarget;
-        if (code === trendTarget) {
-          newTrendTarget = code === 'KRW' ? 'USD' : 'KRW';
-        }
-
         set({ 
           baseCurrency: code, 
           targetCurrencies: newTargets, 
           baseAmount: '', 
           isRateLoading: true,
-          trendBaseCurrency: code,
-          trendTargetCurrency: newTrendTarget
+          trendBaseCurrency: TREND_CURRENCY_CODES.includes(code) ? code : get().trendBaseCurrency
         });
         
         try {
@@ -188,24 +178,15 @@ const useUnitStore = create(
       },
 
       setTrendBaseCurrency: async (code) => {
-        const { trendTargetCurrency } = get();
-        let newTarget = trendTargetCurrency;
-        if (code === trendTargetCurrency) {
-          newTarget = code === 'KRW' ? 'USD' : 'KRW';
-        }
-        set({ trendBaseCurrency: code, trendTargetCurrency: newTarget });
+        set({ trendBaseCurrency: code });
         await get().loadHistoricalRates();
-      },
-
-      setTrendTargetCurrency: (code) => {
-        set({ trendTargetCurrency: code });
       },
 
       loadHistoricalRates: async () => {
         const { trendBaseCurrency } = get();
         set({ isHistoricalLoading: true });
         try {
-          const targets = ['USD', 'JPY', 'EUR', 'KRW'].filter(c => c !== trendBaseCurrency);
+          const targets = TREND_CURRENCY_CODES.filter(c => c !== trendBaseCurrency);
           const data = await fetchHistoricalRates(trendBaseCurrency, targets);
           set({
             historicalRates: data.rates || {},

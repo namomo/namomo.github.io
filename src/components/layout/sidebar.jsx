@@ -99,6 +99,39 @@ const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
         <List sx={{ mt: 1 }}>
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton 
+              selected={currentMode === 'exchange-trends'}
+              onClick={() => {
+                setCurrentMode('exchange-trends');
+                if (isMobile) onClose();
+              }}
+              sx={{
+                borderRadius: '12px',
+                transition: 'all 0.2s ease',
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(103, 58, 183, 0.08)',
+                  color: 'primary.main',
+                  '& .MuiListItemIcon-root': { color: 'primary.main' }
+                },
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.04)',
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <LucideIcons.Activity size={20} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="환율 변동" 
+                primaryTypographyProps={{ 
+                  fontWeight: currentMode === 'exchange-trends' ? 600 : 500,
+                  fontSize: '0.95rem'
+                }} 
+              />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton 
               selected={currentMode === 'unit-price'}
               onClick={() => {
                 setCurrentMode('unit-price');

@@ -15,6 +15,7 @@ import MainCard from './components/converter/main-card'
 import useUnitStore from './stores/unit-store'
 
 const UnitPriceCalculator = lazy(() => import('./components/unit-price/unit-price-calculator'))
+const ExchangeTrendsPage = lazy(() => import('./components/exchange-trends/exchange-trends-page'))
 
 const theme = createTheme({
   palette: {
@@ -60,6 +61,24 @@ function App() {
     setMobileOpen(!mobileOpen);
   };
 
+  const renderContent = () => {
+    if (currentMode === 'converter') return <MainCard />;
+
+    if (currentMode === 'exchange-trends') {
+      return (
+        <Suspense fallback={<Box sx={{ width: '100%', maxWidth: 1040, height: 420 }} />}>
+          <ExchangeTrendsPage />
+        </Suspense>
+      );
+    }
+
+    return (
+      <Suspense fallback={<Box sx={{ width: '100%', maxWidth: 600, height: 320 }} />}>
+        <UnitPriceCalculator />
+      </Suspense>
+    );
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -99,13 +118,7 @@ function App() {
           )}
           
           <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 8 }, display: 'flex', justifyContent: 'center' }}>
-            {currentMode === 'converter' ? (
-              <MainCard />
-            ) : (
-              <Suspense fallback={<Box sx={{ width: '100%', maxWidth: 600, height: 320 }} />}>
-                <UnitPriceCalculator />
-              </Suspense>
-            )}
+            {renderContent()}
           </Container>
         </Box>
       </Box>
