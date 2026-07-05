@@ -35,7 +35,27 @@ const SERIES_COLORS = {
   GBP: '#6d4c41',
 };
 
+const RANGE_OPTIONS = [
+  { days: 30, label: '1개월', groupLabel: '일별' },
+  { days: 90, label: '3개월', groupLabel: '일별' },
+  { days: 180, label: '6개월', groupLabel: '일별' },
+  { days: 365, label: '1년', groupLabel: '주별' },
+  { days: 365 * 3, label: '3년', groupLabel: '월별' },
+  { days: 365 * 5, label: '5년', groupLabel: '월별' },
+];
+
+const BASE_QUOTE_UNITS = {
+  KRW: 1000,
+  JPY: 100,
+};
+
 const getCurrency = (code) => AVAILABLE_CURRENCIES.find(currency => currency.code === code);
+const getBaseQuoteUnit = (code) => BASE_QUOTE_UNITS[code] || 1;
+const scaleRate = (value, multiplier) => (
+  value === undefined || value === null ? null : value * multiplier
+);
+const formatDateLabel = (date) => date.replace(/-/g, '.');
+const formatAxisDate = (date) => date.substring(2).replace(/-/g, '/');
 
 const formatRate = (value) => {
   if (value === undefined || value === null) return '-';
@@ -89,6 +109,8 @@ const ExchangeTrendsPage = () => {
   const {
     trendBaseCurrency,
     setTrendBaseCurrency,
+    historicalRangeDays,
+    setHistoricalRangeDays,
     historicalRates,
     historicalStartDate,
     historicalEndDate,
@@ -132,6 +154,8 @@ const ExchangeTrendsPage = () => {
   );
 
   const baseCurrency = getCurrency(trendBaseCurrency);
+  const baseQuoteUnit = getBaseQuoteUnit(trendBaseCurrency);
+  const selectedRange = RANGE_OPTIONS.find(option => option.days === historicalRangeDays) || RANGE_OPTIONS[0];
 
   return (
     <Box sx={{ width: '100%', maxWidth: 1040, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -155,33 +179,54 @@ const ExchangeTrendsPage = () => {
                 환율 변동
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                주요 통화의 30일 변동률 비교
+                주요 통화의 {selectedRange.label} 변동률 비교
               </Typography>
             </Box>
           </Box>
 
-          <FormControl sx={{ minWidth: 180 }}>
-            <InputLabel id="trend-base-currency-label">기준 화폐</InputLabel>
-            <Select
-              labelId="trend-base-currency-label"
-              label="기준 화폐"
-              value={trendBaseCurrency}
-              onChange={(event) => setTrendBaseCurrency(event.target.value)}
-              sx={{ borderRadius: '16px', fontWeight: 700 }}
-            >
-              {TREND_CURRENCY_CODES.map(code => (
-                <MenuItem key={code} value={code}>
-                  {getCurrency(code)?.symbol} {code}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <FormControl sx={{ minWidth: 180 }}>
+              <InputLabel id="trend-base-currency-label">기준 화폐</InputLabel>
+              <Select
+                labelId="trend-base-currency-label"
+                label="기준 화폐"
+                value={trendBaseCurrency}
+                onChange={(event) => setTrendBaseCurrency(event.target.value)}
+                sx={{ borderRadius: '16px', fontWeight: 700 }}
+              >
+                {TREND_CURRENCY_CODES.map(code => (
+                  <MenuItem key={code} value={code}>
+                    {getCurrency(code)?.symbol} {code}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl sx={{ minWidth: 140 }}>
+              <InputLabel id="trend-range-label">기간</InputLabel>
+              <Select
+                labelId="trend-range-label"
+                label="기간"
+                value={historicalRangeDays}
+                onChange={(event) => setHistoricalRangeDays(Number(event.target.value))}
+                sx={{ borderRadius: '16px', fontWeight: 700 }}
+              >
+                {RANGE_OPTIONS.map(option => (
+                  <MenuItem key={option.days} value={option.days}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
           <Chip label={`기준: ${baseCurrency?.name || trendBaseCurrency}`} color="primary" variant="outlined" />
+          <Chip label={`표시 단위: ${baseQuoteUnit.toLocaleString()} ${trendBaseCurrency}`} variant="outlined" />
+          <Chip label={`표현: ${selectedRange.groupLabel}`} variant="outlined" />
           <Chip
-            label={historicalStartDate ? `${historicalStartDate.replace(/-/g, '.')} ~ ${historicalEndDate.replace(/-/g, '.')}` : '최근 30일'}
+            label={historicalStartDate ? `${formatDateLabel(historicalStartDate)} ~ ${formatDateLabel(historicalEndDate)}` : `최근 ${selectedRange.label}`}
             variant="outlined"
           />
         </Box>
@@ -231,10 +276,10 @@ const ExchangeTrendsPage = () => {
               {dateCount > 0 && (
                 <>
                   <text x={PADDING.left} y={CHART_HEIGHT - 10} fontSize="11" fontWeight="600" fill={theme.palette.text.secondary} textAnchor="middle">
-                    {historicalStartDate.substring(5).replace('-', '/')}
+                    {formatAxisDate(historicalStartDate)}
                   </text>
                   <text x={CHART_WIDTH - PADDING.right} y={CHART_HEIGHT - 10} fontSize="11" fontWeight="600" fill={theme.palette.text.secondary} textAnchor="middle">
-                    {historicalEndDate.substring(5).replace('-', '/')}
+                    {formatAxisDate(historicalEndDate)}
                   </text>
                 </>
               )}
@@ -281,19 +326,19 @@ const ExchangeTrendsPage = () => {
                 ) : (
                   <>
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                      1 {trendBaseCurrency} =
+                      {baseQuoteUnit.toLocaleString()} {trendBaseCurrency} =
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
-                      {formatRate(item.current)} {item.code}
+                      {formatRate(scaleRate(item.current, baseQuoteUnit))} {item.code}
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
                       <Box>
                         <Typography variant="caption" color="text.secondary">최저</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{formatRate(item.min)}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{formatRate(scaleRate(item.min, baseQuoteUnit))}</Typography>
                       </Box>
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="caption" color="text.secondary">최고</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{formatRate(item.max)}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{formatRate(scaleRate(item.max, baseQuoteUnit))}</Typography>
                       </Box>
                     </Box>
                   </>

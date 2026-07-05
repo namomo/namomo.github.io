@@ -20,6 +20,7 @@ const useUnitStore = create(
       
       // Trend Chart States
       trendBaseCurrency: 'KRW',
+      historicalRangeDays: 30,
       historicalRates: {},
       historicalStartDate: '',
       historicalEndDate: '',
@@ -182,12 +183,17 @@ const useUnitStore = create(
         await get().loadHistoricalRates();
       },
 
+      setHistoricalRangeDays: async (days) => {
+        set({ historicalRangeDays: days });
+        await get().loadHistoricalRates();
+      },
+
       loadHistoricalRates: async () => {
-        const { trendBaseCurrency } = get();
+        const { trendBaseCurrency, historicalRangeDays } = get();
         set({ isHistoricalLoading: true });
         try {
           const targets = TREND_CURRENCY_CODES.filter(c => c !== trendBaseCurrency);
-          const data = await fetchHistoricalRates(trendBaseCurrency, targets);
+          const data = await fetchHistoricalRates(trendBaseCurrency, targets, historicalRangeDays);
           set({
             historicalRates: data.rates || {},
             historicalStartDate: data.startDate || '',

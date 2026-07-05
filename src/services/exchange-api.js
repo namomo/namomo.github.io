@@ -83,14 +83,21 @@ export const fetchExchangeRates = async (base = 'KRW', symbols = ['USD', 'JPY', 
 const HISTORICAL_CACHE_KEY = 'unitbridge_historical';
 const HISTORICAL_CACHE_EXPIRY = 1000 * 60 * 60 * 12; // 12 hours
 
-// 3. Fetch historical rates for last 30 days
-export const fetchHistoricalRates = async (base = 'KRW', symbols = ['USD', 'JPY', 'EUR', 'GBP']) => {
+const getHistoricalGroup = (days) => {
+  if (days >= 365 * 3) return 'month';
+  if (days >= 365) return 'week';
+  return 'day';
+};
+
+// 3. Fetch historical rates for the requested lookback window
+export const fetchHistoricalRates = async (base = 'KRW', symbols = ['USD', 'JPY', 'EUR', 'GBP'], days = 30) => {
   const filteredSymbols = symbols.filter(s => s !== base);
   if (filteredSymbols.length === 0) {
     return { rates: {}, startDate: '', endDate: '' };
   }
   const symbolsQuery = filteredSymbols.join(',');
-  const cacheKey = `${HISTORICAL_CACHE_KEY}_${base}_${symbolsQuery}`;
+  const group = getHistoricalGroup(days);
+  const cacheKey = `${HISTORICAL_CACHE_KEY}_${base}_${symbolsQuery}_${days}d_${group}`;
   const cached = readCache(cacheKey);
 
   if (cached) {
@@ -101,16 +108,17 @@ export const fetchHistoricalRates = async (base = 'KRW', symbols = ['USD', 'JPY'
     }
   }
 
-  // Calculate date 30 days ago
+  // Calculate requested lookback date
   const d = new Date();
-  d.setDate(d.getDate() - 30);
+  d.setDate(d.getDate() - days);
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const startDateStr = `${yyyy}-${mm}-${dd}`;
 
   try {
-    const response = await fetch(`https://api.frankfurter.dev/v1/${startDateStr}..?from=${base}&to=${symbolsQuery}`);
+    const groupQuery = group === 'day' ? '' : `&group=${group}`;
+    const response = await fetch(`https://api.frankfurter.dev/v1/${startDateStr}..?from=${base}&to=${symbolsQuery}${groupQuery}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
