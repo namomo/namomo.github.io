@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   Box, 
   Card, 
@@ -21,6 +21,12 @@ const UNITS = [
   { id: 'box', name: '박스 (box)', group: 'count', factor: 1 },
 ];
 
+const getDefaultReference = (group) => {
+  if (group === 'weight') return { quantity: '100', unit: 'g' };
+  if (group === 'volume') return { quantity: '100', unit: 'ml' };
+  return { quantity: '1', unit: 'pcs' };
+};
+
 const UnitPriceCalculator = () => {
   const [totalPrice, setTotalPrice] = useState('');
   const [totalQuantity, setTotalQuantity] = useState('');
@@ -28,31 +34,22 @@ const UnitPriceCalculator = () => {
   
   const [refQuantity, setRefQuantity] = useState('100');
   const [refUnit, setRefUnit] = useState('ml');
-  
-  const [lastGroup, setLastGroup] = useState(null);
-
-  // Auto-update reference unit based on selected unit group
-  useEffect(() => {
-    const unitObj = UNITS.find(u => u.id === selectedUnit);
-    if (!unitObj) return;
-
-    if (unitObj.group !== lastGroup) {
-      if (unitObj.group === 'weight') {
-        setRefQuantity('100');
-        setRefUnit('g');
-      } else if (unitObj.group === 'volume') {
-        setRefQuantity('100');
-        setRefUnit('ml');
-      } else {
-        setRefQuantity('1');
-        setRefUnit('pcs');
-      }
-      setLastGroup(unitObj.group);
-    }
-  }, [selectedUnit, lastGroup]);
 
   const selectedUnitObj = UNITS.find(u => u.id === selectedUnit);
   const allowedRefUnits = selectedUnitObj ? UNITS.filter(u => u.group === selectedUnitObj.group) : UNITS;
+
+  const handleSelectedUnitChange = (nextUnit) => {
+    const currentUnitObj = UNITS.find(u => u.id === selectedUnit);
+    const nextUnitObj = UNITS.find(u => u.id === nextUnit);
+
+    setSelectedUnit(nextUnit);
+
+    if (nextUnitObj && nextUnitObj.group !== currentUnitObj?.group) {
+      const nextReference = getDefaultReference(nextUnitObj.group);
+      setRefQuantity(nextReference.quantity);
+      setRefUnit(nextReference.unit);
+    }
+  };
 
   const result = useMemo(() => {
     const price = parseFloat(totalPrice);
@@ -156,7 +153,7 @@ const UnitPriceCalculator = () => {
                     fullWidth
                     label="단위"
                     value={selectedUnit}
-                    onChange={(e) => setSelectedUnit(e.target.value)}
+                    onChange={(e) => handleSelectedUnitChange(e.target.value)}
                   >
                     {UNITS.map((unit) => (
                       <MenuItem key={unit.id} value={unit.id}>

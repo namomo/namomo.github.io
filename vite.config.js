@@ -9,10 +9,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          mui: ['@mui/material', '@emotion/react', '@emotion/styled'],
-          vendor: ['zustand', 'lucide-react'],
+        manualChunks: (id) => {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('@mui') || id.includes('@emotion')) return 'mui';
+          if (id.includes('react-dom') || /node_modules[\\/]+react[\\/]/.test(id)) return 'react';
+          if (id.includes('zustand') || id.includes('lucide-react')) return 'vendor';
+          return undefined;
         },
       },
     },
