@@ -12,9 +12,10 @@ import {
 import { Menu as MenuIcon } from 'lucide-react'
 import Sidebar from './components/layout/sidebar'
 import MainCard from './components/converter/main-card'
+import UnitPriceCalculator from './components/unit-price/unit-price-calculator'
+import ChartBuilder from './components/chart-builder/chart-builder'
 import useUnitStore from './stores/unit-store'
 
-const UnitPriceCalculator = lazy(() => import('./components/unit-price/unit-price-calculator'))
 const ExchangeTrendsPage = lazy(() => import('./components/exchange-trends/exchange-trends-page'))
 
 const theme = createTheme({
@@ -61,24 +62,6 @@ function App() {
     setMobileOpen(!mobileOpen);
   };
 
-  const renderContent = () => {
-    if (currentMode === 'converter') return <MainCard />;
-
-    if (currentMode === 'exchange-trends') {
-      return (
-        <Suspense fallback={<Box sx={{ width: '100%', maxWidth: 1040, height: 420 }} />}>
-          <ExchangeTrendsPage />
-        </Suspense>
-      );
-    }
-
-    return (
-      <Suspense fallback={<Box sx={{ width: '100%', maxWidth: 600, height: 320 }} />}>
-        <UnitPriceCalculator />
-      </Suspense>
-    );
-  };
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -118,7 +101,14 @@ function App() {
           )}
           
           <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 8 }, display: 'flex', justifyContent: 'center' }}>
-            {renderContent()}
+            {currentMode === 'converter' && <MainCard />}
+            {currentMode === 'unit-price' && <UnitPriceCalculator />}
+            {currentMode === 'chart-builder' && <ChartBuilder />}
+            {currentMode === 'exchange-trends' && (
+              <Suspense fallback={<Box sx={{ width: '100%', maxWidth: 1040, height: 420 }} />}>
+                <ExchangeTrendsPage />
+              </Suspense>
+            )}
           </Container>
         </Box>
       </Box>

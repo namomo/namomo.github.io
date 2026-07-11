@@ -130,6 +130,7 @@ const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
             </ListItemButton>
           </ListItem>
 
+          {/* 단위당 가격 계산기 */}
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton 
               selected={currentMode === 'unit-price'}
@@ -157,6 +158,40 @@ const Sidebar = ({ open, onClose, variant = 'permanent' }) => {
                 primary="단위당 가격 계산" 
                 primaryTypographyProps={{ 
                   fontWeight: currentMode === 'unit-price' ? 600 : 500,
+                  fontSize: '0.95rem'
+                }} 
+              />
+            </ListItemButton>
+          </ListItem>
+
+          {/* 동적 차트 빌더 */}
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton 
+              selected={currentMode === 'chart-builder'}
+              onClick={() => {
+                setCurrentMode('chart-builder');
+                if (isMobile) onClose();
+              }}
+              sx={{
+                borderRadius: '12px',
+                transition: 'all 0.2s ease',
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(103, 58, 183, 0.08)',
+                  color: 'primary.main',
+                  '& .MuiListItemIcon-root': { color: 'primary.main' }
+                },
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.04)',
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <LucideIcons.BarChart2 size={20} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="동적 차트 빌더" 
+                primaryTypographyProps={{ 
+                  fontWeight: currentMode === 'chart-builder' ? 600 : 500,
                   fontSize: '0.95rem'
                 }} 
               />
