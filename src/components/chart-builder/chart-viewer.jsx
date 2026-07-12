@@ -1,14 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { 
-  Box, 
-  Card, 
-  Typography, 
-  Button, 
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
   ButtonGroup,
   Stack,
 } from '@mui/material';
 import { LineChart, BarChart, PieChart } from '@mui/x-charts';
-import { Download, BarChart2, LineChart as LineIcon, PieChart as PieIcon, HelpCircle } from 'lucide-react';
+import { Download, BarChart2, LineChart as LineIcon, PieChart as PieIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import useChartStore from '../../stores/chart-store';
 
@@ -24,26 +24,23 @@ const ChartViewer = () => {
   const chartContainerRef = useRef(null);
   const [chartWidth, setChartWidth] = useState(0);
 
-  // 컨테이너 가로폭 변화 감지 및 3px 임계 필터로 무한 리렌더링 차단
+  // 최초 마운트 때 단 1회만 가로폭을 추출하고 관찰은 생략 (리사이즈/흔들림에 따른 툴팁 파괴 방지)
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (chartContainerRef.current) {
+      setChartWidth(chartContainerRef.current.clientWidth);
+    }
+  }, []);
 
-    let currentWidth = chartContainerRef.current.clientWidth;
-    setChartWidth(currentWidth);
-
-    const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        const newWidth = Math.round(entry.contentRect.width);
-        if (Math.abs(newWidth - currentWidth) > 3) {
-          currentWidth = newWidth;
-          setChartWidth(newWidth);
-        }
-      }
-    });
-
-    observer.observe(chartContainerRef.current);
-    return () => observer.disconnect();
-  }, [isGenerated]);
+  // MUI X-Charts의 윈도우 포커스 이탈/복귀 시 툴팁 해제 메커니즘을 시뮬레이션하여 툴팁 마비 버그 완치
+  useEffect(() => {
+    if (isGenerated) {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('blur'));
+        window.dispatchEvent(new Event('focus'));
+      }, 50); // 차트 마운트가 완전히 완료된 직후 이벤트를 쏘도록 50ms 미세 딜레이 적용
+      return () => clearTimeout(timer);
+    }
+  }, [isGenerated, chartType]);
 
   // html2canvas를 활용해 차트 영역을 보이는 그대로 이미지로 변환하여 다운로드하는 로직
   const handleExportPng = async () => {
@@ -65,7 +62,7 @@ const ChartViewer = () => {
       link.download = `chart_${chartType}_export.png`;
       document.body.appendChild(link);
       link.click();
-      
+
       // DOM 정리
       document.body.removeChild(link);
     } catch (error) {
@@ -74,14 +71,27 @@ const ChartViewer = () => {
   };
 
   const renderChart = () => {
-    if (renderedRows.length === 0) return null;
+    // 플레이스홀더를 없앴기 때문에 차트 생성이 안 되었거나 데이터가 없으면 SVG 자체를 안 그리도록 차단
+    if (!isGenerated || renderedRows.length === 0) return null;
 
     // 공통 범례 스타일 옵션 (상단 중앙 정렬)
     const legendSlotProps = {
       legend: {
-        direction: 'row',
-        position: { vertical: 'top', horizontal: 'middle' },
+        direction: 'horizontal',
+        position: { vertical: 'top', horizontal: 'center' },
         padding: { bottom: 10 }
+      }
+    };
+
+    // 공통 툴팁 및 Popper 속성 (포털 해제 및 Z-Index 강제 지정으로 최초 마운트/전환 시 툴팁 잠김 우회)
+    const tooltipSlotProps = {
+      // popper: {
+      //   disablePortal: true,
+      //   sx: { zIndex: 9999 }
+      // }
+      tooltip: { trigger: 'axis' },
+      popper: {
+        sx: { zIndex: 9999 }
       }
     };
 
@@ -93,7 +103,7 @@ const ChartViewer = () => {
         value: Number(r[firstSeriesKey]) || 0,
         label: r.label,
       }));
-      
+
       return (
         <PieChart
           key={chartType}
@@ -111,7 +121,10 @@ const ChartViewer = () => {
           width={chartWidth || 500}
           height={350}
           margin={{ top: 50, bottom: 20, left: 20, right: 20 }}
-          slotProps={legendSlotProps}
+          slotProps={{
+            ...legendSlotProps,
+            ...tooltipSlotProps
+          }}
         />
       );
     }
@@ -133,7 +146,10 @@ const ChartViewer = () => {
           width={chartWidth || 500}
           height={350}
           margin={{ top: 65, bottom: 30, left: 40, right: 20 }}
-          slotProps={legendSlotProps}
+          slotProps={{
+            ...legendSlotProps,
+            ...tooltipSlotProps
+          }}
         />
       );
     }
@@ -149,7 +165,10 @@ const ChartViewer = () => {
           width={chartWidth || 500}
           height={350}
           margin={{ top: 65, bottom: 30, left: 40, right: 20 }}
-          slotProps={legendSlotProps}
+          slotProps={{
+            ...legendSlotProps,
+            ...tooltipSlotProps
+          }}
         />
       );
     }
@@ -158,14 +177,20 @@ const ChartViewer = () => {
   };
 
   return (
-    <Card 
-      elevation={0} 
-      sx={{ 
-        p: 3, 
-        border: '1px solid rgba(0,0,0,0.08)', 
-        borderRadius: '16px', 
-        height: '100%', 
-        display: 'flex', 
+    <Card
+      ref={chartContainerRef}
+      onMouseEnter={() => {
+        if (typeof document !== 'undefined') {
+          document.activeElement?.blur();
+        }
+      }}
+      elevation={0}
+      sx={{
+        p: 3,
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: '16px',
+        height: '100%',
+        display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         minHeight: '420px'
@@ -190,22 +215,22 @@ const ChartViewer = () => {
               이미지 저장
             </Button>
             <ButtonGroup size="small" aria-label="chart type button group" color="primary">
-              <Button 
-                onClick={() => setChartType('line')} 
+              <Button
+                onClick={() => setChartType('line')}
                 variant={chartType === 'line' ? 'contained' : 'outlined'}
                 startIcon={<LineIcon size={14} />}
               >
                 꺾은선
               </Button>
-              <Button 
-                onClick={() => setChartType('bar')} 
+              <Button
+                onClick={() => setChartType('bar')}
                 variant={chartType === 'bar' ? 'contained' : 'outlined'}
                 startIcon={<BarChart2 size={14} />}
               >
                 막대
               </Button>
-              <Button 
-                onClick={() => setChartType('pie')} 
+              <Button
+                onClick={() => setChartType('pie')}
                 variant={chartType === 'pie' ? 'contained' : 'outlined'}
                 startIcon={<PieIcon size={14} />}
               >
@@ -215,29 +240,15 @@ const ChartViewer = () => {
           </Stack>
         </Box>
 
-        {/* 렌더링 본문 영역 */}
-        {!isGenerated ? (
-          // 플레이스홀더 영역
-          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, color: 'text.disabled', minHeight: '350px' }}>
-            <HelpCircle size={48} strokeWidth={1.5} />
-            <Typography variant="body1" sx={{ mt: 2, fontWeight: 600, color: 'text.secondary' }}>
-              차트가 아직 생성되지 않았습니다.
+        {/* 렌더링 본문 영역 - 플레이스홀더를 지우고 항상 차트 영역 Box가 상주하도록 격리 */}
+        <Box sx={{ width: '100%', height: 375, bgcolor: '#ffffff', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.02)', p: 1 }}>
+          {renderChart()}
+          {isGenerated && chartType === 'pie' && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 0.5, fontStyle: 'italic' }}>
+              * 원형(Pie) 차트는 공간 효율 상 첫 번째 계열 데이터 기준으로 시각화됩니다.
             </Typography>
-            <Typography variant="body2" sx={{ mt: 0.5, textAlign: 'center', maxWidth: '300px' }}>
-              왼쪽 에디터에서 데이터를 기입하고 위저드에 맞춰 "차트 생성 및 반영" 버튼을 눌러주세요.
-            </Typography>
-          </Box>
-        ) : (
-          // 차트 렌더링 본체 (차트 너비 감지 상태 주입)
-          <Box ref={chartContainerRef} sx={{ width: '100%', height: 375, bgcolor: '#ffffff', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.02)', p: 1 }}>
-            {renderChart()}
-            {chartType === 'pie' && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 0.5, fontStyle: 'italic' }}>
-                * 원형(Pie) 차트는 공간 효율 상 첫 번째 계열 데이터 기준으로 시각화됩니다.
-              </Typography>
-            )}
-          </Box>
-        )}
+          )}
+        </Box>
       </Box>
     </Card>
   );
