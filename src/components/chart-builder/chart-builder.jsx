@@ -16,14 +16,11 @@ const ChartBuilder = () => {
         </Typography>
       </Box>
 
-      {/* 100% 가로 폭 세로 Stack 레이아웃 */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
-        {/* 상단: 대형 데이터 에디터 테이블 */}
-        <DataTable />
+      {/* 상단: 대형 데이터 에디터 테이블 */}
+      <DataTable />
 
-        {/* 하단: 대형 차트 뷰포트 및 미리보기 */}
-        <ChartViewer />
-      </Box>
+      {/* 하단: 대형 차트 뷰포트 및 미리보기 */}
+      <ChartViewer />
     </Box>
   );
 };
