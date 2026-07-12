@@ -5,10 +5,11 @@ import {
   Typography, 
   Button, 
   ButtonGroup,
-  Fade,
+  Stack,
 } from '@mui/material';
 import { LineChart, BarChart, PieChart } from '@mui/x-charts';
 import { Download, BarChart2, LineChart as LineIcon, PieChart as PieIcon, HelpCircle } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import useChartStore from '../../stores/chart-store';
 
 const ChartViewer = () => {
@@ -21,30 +22,21 @@ const ChartViewer = () => {
   } = useChartStore();
 
   const chartContainerRef = useRef(null);
-  
-  // 실시간 차트 가로폭 측정을 위한 상태
   const [chartWidth, setChartWidth] = useState(0);
 
-  // ResizeObserver를 통해 부모 컨테이너의 실시간 너비 획득 (반응형 대응)
+  // 컨테이너 가로폭 변화 감지 및 3px 임계 필터로 무한 리렌더링 차단
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    let currentWidth = chartContainerRef.current.clientWidth;
+    setChartWidth(currentWidth);
+
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
-        const width = entry.contentRect.width;
-        if (width > 0) {
-          // padding 간격을 조금 차감해서 안전 크기 지정 (양옆 패딩 총 16px 고려)
-          const padding = 16;
-          const targetWidth = Math.floor(width - padding);
-          
-          // 이전 값과 차이가 5px 초과일 때만 상태를 업데이트합니다.
-          // 툴팁 말풍선이 오버될 때 일어나는 1~2px 미세 레이아웃 떨림에 의한 리렌더링/툴팁 소멸을 완전 차단합니다.
-          setChartWidth(prev => {
-            if (Math.abs(prev - targetWidth) > 5) {
-              return targetWidth;
-            }
-            return prev;
-          });
+        const newWidth = Math.round(entry.contentRect.width);
+        if (Math.abs(newWidth - currentWidth) > 3) {
+          currentWidth = newWidth;
+          setChartWidth(newWidth);
         }
       }
     });
@@ -53,67 +45,29 @@ const ChartViewer = () => {
     return () => observer.disconnect();
   }, [isGenerated]);
 
-  // SVG를 Canvas를 통해 PNG 이미지로 변환하여 다운로드하는 로직
-  const handleExportPng = () => {
+  // html2canvas를 활용해 차트 영역을 보이는 그대로 이미지로 변환하여 다운로드하는 로직
+  const handleExportPng = async () => {
     if (!chartContainerRef.current) return;
 
-    const svgEl = chartContainerRef.current.querySelector('svg');
-    if (!svgEl) {
-      alert('차트 이미지 요소를 찾을 수 없습니다.');
-      return;
-    }
-
     try {
-      const serializer = new XMLSerializer();
-      let svgString = serializer.serializeToString(svgEl);
+      // 차트 컨테이너 상자 전체를 보이는 그대로 고해상도 Canvas로 캡처
+      const canvas = await html2canvas(chartContainerRef.current, {
+        scale: 2, // 고해상도 (2배 스케일)
+        useCORS: true, // CORS 지원
+        backgroundColor: '#ffffff', // 배경을 깔끔한 흰색으로 지정
+        logging: false, // 콘솔 디버그 로그 비활성화
+      });
 
-      // namespace 보정
-      if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
-        svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-      }
-
-      // 폰트 스타일 및 한글 깨짐 방지 폰트 주입
-      const styleTag = `<style>svg { font-family: "Pretendard", "Inter", sans-serif; }</style>`;
-      svgString = svgString.replace(/>/, `>${styleTag}`);
-
-      // Blob 및 Object URL 생성
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const objectUrl = URL.createObjectURL(svgBlob);
-
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const scale = 2; // 고해상도
-        const width = svgEl.clientWidth || chartWidth || 500;
-        const height = svgEl.clientHeight || 350;
-
-        canvas.width = width * scale;
-        canvas.height = height * scale;
-
-        const ctx = canvas.getContext('2d');
-        ctx.scale(scale, scale);
-
-        // 하얀색 배경 칠하기
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, height);
-
-        // 이미지 그리기
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // PNG 다운로드
-        const pngUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = pngUrl;
-        link.download = `chart_${chartType}_export.png`;
-        document.body.appendChild(link);
-        link.click();
-        
-        // 정리
-        document.body.removeChild(link);
-        URL.revokeObjectURL(objectUrl);
-      };
-      img.src = objectUrl;
-
+      // PNG 이미지로 다운로드 실행
+      const pngUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = pngUrl;
+      link.download = `chart_${chartType}_export.png`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // DOM 정리
+      document.body.removeChild(link);
     } catch (error) {
       console.error('Failed to export chart:', error);
     }
@@ -154,7 +108,7 @@ const ChartViewer = () => {
               faded: { innerRadius: 30, additionalRadius: -10, color: 'gray' },
             },
           ]}
-          width={chartWidth || 400}
+          width={chartWidth || 500}
           height={350}
           margin={{ top: 50, bottom: 20, left: 20, right: 20 }}
           slotProps={legendSlotProps}
@@ -176,7 +130,7 @@ const ChartViewer = () => {
           dataset={renderedRows}
           xAxis={[{ scaleType: 'band', dataKey: 'label' }]}
           series={series}
-          width={chartWidth || 400}
+          width={chartWidth || 500}
           height={350}
           margin={{ top: 65, bottom: 30, left: 40, right: 20 }}
           slotProps={legendSlotProps}
@@ -192,7 +146,7 @@ const ChartViewer = () => {
           dataset={renderedRows}
           xAxis={[{ scaleType: 'band', dataKey: 'label' }]}
           series={series}
-          width={chartWidth || 400}
+          width={chartWidth || 500}
           height={350}
           margin={{ top: 65, bottom: 30, left: 40, right: 20 }}
           slotProps={legendSlotProps}
@@ -214,7 +168,7 @@ const ChartViewer = () => {
         display: 'flex', 
         flexDirection: 'column',
         justifyContent: 'space-between',
-        minHeight: '450px'
+        minHeight: '420px'
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: 2 }}>
@@ -223,29 +177,42 @@ const ChartViewer = () => {
           <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
             실시간 차트 미리보기
           </Typography>
-          <ButtonGroup size="small" aria-label="chart type button group" color="primary">
-            <Button 
-              onClick={() => setChartType('line')} 
-              variant={chartType === 'line' ? 'contained' : 'outlined'}
-              startIcon={<LineIcon size={14} />}
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Button
+              variant="outlined"
+              color="primary"
+              size="small"
+              disabled={!isGenerated}
+              startIcon={<Download size={14} />}
+              onClick={handleExportPng}
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
             >
-              꺾은선
+              이미지 저장
             </Button>
-            <Button 
-              onClick={() => setChartType('bar')} 
-              variant={chartType === 'bar' ? 'contained' : 'outlined'}
-              startIcon={<BarChart2 size={14} />}
-            >
-              막대
-            </Button>
-            <Button 
-              onClick={() => setChartType('pie')} 
-              variant={chartType === 'pie' ? 'contained' : 'outlined'}
-              startIcon={<PieIcon size={14} />}
-            >
-              원형
-            </Button>
-          </ButtonGroup>
+            <ButtonGroup size="small" aria-label="chart type button group" color="primary">
+              <Button 
+                onClick={() => setChartType('line')} 
+                variant={chartType === 'line' ? 'contained' : 'outlined'}
+                startIcon={<LineIcon size={14} />}
+              >
+                꺾은선
+              </Button>
+              <Button 
+                onClick={() => setChartType('bar')} 
+                variant={chartType === 'bar' ? 'contained' : 'outlined'}
+                startIcon={<BarChart2 size={14} />}
+              >
+                막대
+              </Button>
+              <Button 
+                onClick={() => setChartType('pie')} 
+                variant={chartType === 'pie' ? 'contained' : 'outlined'}
+                startIcon={<PieIcon size={14} />}
+              >
+                원형
+              </Button>
+            </ButtonGroup>
+          </Stack>
         </Box>
 
         {/* 렌더링 본문 영역 */}
@@ -261,32 +228,15 @@ const ChartViewer = () => {
             </Typography>
           </Box>
         ) : (
-          // 차트 렌더링 본체
-          <Fade in={isGenerated} timeout={400}>
-            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-              {/* 차트 드로잉 컨테이너 */}
-              <Box ref={chartContainerRef} sx={{ width: '100%', flexGrow: 1, bgcolor: '#ffffff', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.02)', p: 1 }}>
-                {renderChart()}
-                {chartType === 'pie' && (
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: -2, fontStyle: 'italic' }}>
-                    * 원형(Pie) 차트는 공간 효율 상 첫 번째 계열 데이터 기준으로 시각화됩니다.
-                  </Typography>
-                )}
-              </Box>
-
-              {/* 다운로드 버튼 */}
-              <Button
-                fullWidth
-                variant="outlined"
-                color="primary"
-                startIcon={<Download size={16} />}
-                onClick={handleExportPng}
-                sx={{ mt: 3, fontWeight: 700, borderRadius: '12px', py: 1 }}
-              >
-                차트 이미지 저장 (PNG)
-              </Button>
-            </Box>
-          </Fade>
+          // 차트 렌더링 본체 (차트 너비 감지 상태 주입)
+          <Box ref={chartContainerRef} sx={{ width: '100%', height: 375, bgcolor: '#ffffff', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.02)', p: 1 }}>
+            {renderChart()}
+            {chartType === 'pie' && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 0.5, fontStyle: 'italic' }}>
+                * 원형(Pie) 차트는 공간 효율 상 첫 번째 계열 데이터 기준으로 시각화됩니다.
+              </Typography>
+            )}
+          </Box>
         )}
       </Box>
     </Card>
